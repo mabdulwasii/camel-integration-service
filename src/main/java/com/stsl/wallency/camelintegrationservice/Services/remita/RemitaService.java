@@ -42,30 +42,30 @@ public class RemitaService {
 //        message.setHeaders(exchange.getIn().getHeaders());
 //        exchange.setMessage(message);
 //    }
-
-    public void getBillCategories(Exchange exchange) {
-        RemitaBillersResponseDto remitaBillersResponseDto = exchange.getIn().getBody(RemitaBillersResponseDto.class);
-        List<RemitaBillersDto> remitaBillersDtoList = remitaBillersResponseDto.getData();
-        Message message = new DefaultMessage(exchange);
-        HashMap<String, Object> billCategories = new HashMap<>();
-        billCategories.put("billCategories", remitaBillersDtoList);
-        message.setBody(billCategories);
-        message.setHeaders(exchange.getIn().getHeaders());
-        exchange.setMessage(message);
-
-    }
-
-    public void getBillsByCategory(Exchange exchange) {
-        RemitaBillersResponseDto remitaBillersResponseDto = exchange.getIn().getBody(RemitaBillersResponseDto.class);
-        List<RemitaBillersDto> remitaBillersResponseDtoData = remitaBillersResponseDto.getData();
-        Message message = new DefaultMessage(exchange);
-        HashMap<String, Object> billsByCategory = new HashMap<>();
-        billsByCategory.put("billsByCategory", remitaBillersResponseDtoData);
-        message.setBody(billsByCategory);
-        message.setHeaders(exchange.getIn().getHeaders());
-        exchange.setMessage(message);
-
-    }
+//
+//    public void getBillCategories(Exchange exchange) {
+//        RemitaBillersResponseDto remitaBillersResponseDto = exchange.getIn().getBody(RemitaBillersResponseDto.class);
+//        List<RemitaBillersDto> remitaBillersDtoList = remitaBillersResponseDto.getData();
+//        Message message = new DefaultMessage(exchange);
+//        HashMap<String, Object> billCategories = new HashMap<>();
+//        billCategories.put("billCategories", remitaBillersDtoList);
+//        message.setBody(billCategories);
+//        message.setHeaders(exchange.getIn().getHeaders());
+//        exchange.setMessage(message);
+//
+//    }
+//
+//    public void getBillsByCategory(Exchange exchange) {
+//        RemitaBillersResponseDto remitaBillersResponseDto = exchange.getIn().getBody(RemitaBillersResponseDto.class);
+//        List<RemitaBillersDto> remitaBillersResponseDtoData = remitaBillersResponseDto.getData();
+//        Message message = new DefaultMessage(exchange);
+//        HashMap<String, Object> billsByCategory = new HashMap<>();
+//        billsByCategory.put("billsByCategory", remitaBillersResponseDtoData);
+//        message.setBody(billsByCategory);
+//        message.setHeaders(exchange.getIn().getHeaders());
+//        exchange.setMessage(message);
+//
+//    }
 
 
 //    public void getBillerProducts(Exchange exchange) {
@@ -98,6 +98,35 @@ public class RemitaService {
 
 
     public BaseResponse getBillerProducts(Exchange exchange) {
+        BaseResponse baseResponse = new BaseResponse();
+        RemitaBillerProductsResponseDto remitaBillerProductsResponseDto = exchange.getIn().getBody(RemitaBillerProductsResponseDto.class);
+        if (remitaBillerProductsResponseDto.getStatus().equals("00")) {
+            Object remitaBillerProductsResponseDtoData = remitaBillerProductsResponseDto.getData();
+            baseResponse.setStatusCode(HttpStatus.OK.value());
+            baseResponse.setDescription("Biller products found.");
+            baseResponse.setData(remitaBillerProductsResponseDtoData);
+        } else {
+            throw new RuntimeException("No biller products found.");
+        }
+        return baseResponse;
+
+    }
+
+    public BaseResponse validateCustomer(Exchange exchange) {
+        BaseResponse baseResponse = new BaseResponse();
+        RemitaBillerProductsResponseDto remitaBillerProductsResponseDto = exchange.getIn().getBody(RemitaBillerProductsResponseDto.class);
+        if (remitaBillerProductsResponseDto.getStatus().equals("00")) {
+            Object remitaBillerProductsResponseDtoData = remitaBillerProductsResponseDto.getData();
+            baseResponse.setStatusCode(HttpStatus.OK.value());
+            baseResponse.setDescription("Biller products found.");
+            baseResponse.setData(remitaBillerProductsResponseDtoData);
+        } else {
+            throw new RuntimeException("No biller products found.");
+        }
+        return baseResponse;
+
+    }
+    public BaseResponse initiateTransaction(Exchange exchange) {
         BaseResponse baseResponse = new BaseResponse();
         RemitaBillerProductsResponseDto remitaBillerProductsResponseDto = exchange.getIn().getBody(RemitaBillerProductsResponseDto.class);
         if (remitaBillerProductsResponseDto.getStatus().equals("00")) {

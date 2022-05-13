@@ -1,8 +1,13 @@
 package com.stsl.wallency.camelintegrationservice.dto.remita;
 
+import lombok.Data;
+import org.springframework.stereotype.Component;
+
+import javax.persistence.Embedded;
 import java.math.BigDecimal;
 import java.util.List;
 
+@Data
 public class RemitaInitiateTransactionDto {
 
     private String billPaymentProductId;
@@ -19,12 +24,7 @@ public class RemitaInitiateTransactionDto {
 
     private String customerId;
 
-    private List<CustomFields> metadata;
+    private String metadata ;
 
-    private class CustomFields {
-        private String variable_name;
-
-        private String value;
-    }
 }
 
