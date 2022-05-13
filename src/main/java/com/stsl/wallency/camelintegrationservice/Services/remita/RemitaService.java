@@ -1,15 +1,12 @@
 package com.stsl.wallency.camelintegrationservice.Services.remita;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.stsl.wallency.camelintegrationservice.dto.BaseResponse;
 import com.stsl.wallency.camelintegrationservice.dto.remita.*;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.camel.*;
-import org.apache.camel.support.DefaultMessage;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
-import java.util.HashMap;
 import java.util.List;
 
 
@@ -99,9 +96,9 @@ public class RemitaService {
 
     public BaseResponse getBillerProducts(Exchange exchange) {
         BaseResponse baseResponse = new BaseResponse();
-        RemitaBillerProductsResponseDto remitaBillerProductsResponseDto = exchange.getIn().getBody(RemitaBillerProductsResponseDto.class);
-        if (remitaBillerProductsResponseDto.getStatus().equals("00")) {
-            Object remitaBillerProductsResponseDtoData = remitaBillerProductsResponseDto.getData();
+        RemitaResponseDto remitaResponseDto = exchange.getIn().getBody(RemitaResponseDto.class);
+        if (remitaResponseDto.getStatus().equals("00")) {
+            Object remitaBillerProductsResponseDtoData = remitaResponseDto.getData();
             baseResponse.setStatusCode(HttpStatus.OK.value());
             baseResponse.setDescription("Biller products found.");
             baseResponse.setData(remitaBillerProductsResponseDtoData);
@@ -112,30 +109,22 @@ public class RemitaService {
 
     }
 
-    public BaseResponse validateCustomer(Exchange exchange) {
-        BaseResponse baseResponse = new BaseResponse();
-        RemitaBillerProductsResponseDto remitaBillerProductsResponseDto = exchange.getIn().getBody(RemitaBillerProductsResponseDto.class);
-        if (remitaBillerProductsResponseDto.getStatus().equals("00")) {
-            Object remitaBillerProductsResponseDtoData = remitaBillerProductsResponseDto.getData();
-            baseResponse.setStatusCode(HttpStatus.OK.value());
-            baseResponse.setDescription("Biller products found.");
-            baseResponse.setData(remitaBillerProductsResponseDtoData);
-        } else {
-            throw new RuntimeException("No biller products found.");
+    public void validateCustomer(Exchange exchange) {
+        RemitaResponseDto remitaResponseDto = exchange.getIn().getBody(RemitaResponseDto.class);
+        if (!remitaResponseDto.getStatus().equals("00")) {
+            throw new RuntimeException("Failed to validate customer.");
         }
-        return baseResponse;
-
     }
+
     public BaseResponse initiateTransaction(Exchange exchange) {
         BaseResponse baseResponse = new BaseResponse();
-        RemitaBillerProductsResponseDto remitaBillerProductsResponseDto = exchange.getIn().getBody(RemitaBillerProductsResponseDto.class);
-        if (remitaBillerProductsResponseDto.getStatus().equals("00")) {
-            Object remitaBillerProductsResponseDtoData = remitaBillerProductsResponseDto.getData();
+        RemitaResponseDto remitaResponseDto = exchange.getIn().getBody(RemitaResponseDto.class);
+        if (remitaResponseDto.getStatus().equals("00")) {
             baseResponse.setStatusCode(HttpStatus.OK.value());
-            baseResponse.setDescription("Biller products found.");
-            baseResponse.setData(remitaBillerProductsResponseDtoData);
+            baseResponse.setDescription(remitaResponseDto.getMessage());
+            baseResponse.setData(remitaResponseDto.getData());
         } else {
-            throw new RuntimeException("No biller products found.");
+            throw new RuntimeException(remitaResponseDto.getMessage());
         }
         return baseResponse;
 

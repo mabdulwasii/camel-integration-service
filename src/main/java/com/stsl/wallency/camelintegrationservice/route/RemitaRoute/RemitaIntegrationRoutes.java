@@ -3,8 +3,9 @@ package com.stsl.wallency.camelintegrationservice.route.RemitaRoute;
 import com.stsl.wallency.camelintegrationservice.Services.remita.RemitaService;
 import com.stsl.wallency.camelintegrationservice.dto.BaseResponse;
 import com.stsl.wallency.camelintegrationservice.dto.remita.RemitaAuthDto;
-import com.stsl.wallency.camelintegrationservice.dto.remita.RemitaBillerProductsResponseDto;
+import com.stsl.wallency.camelintegrationservice.dto.remita.RemitaResponseDto;
 import com.stsl.wallency.camelintegrationservice.dto.remita.RemitaBillersResponseDto;
+import com.stsl.wallency.camelintegrationservice.dto.remita.RemitaInitiateTransactionDto;
 import org.apache.camel.Exchange;
 import org.apache.camel.LoggingLevel;
 import org.apache.camel.builder.RouteBuilder;
@@ -14,6 +15,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
 import java.util.Map;
 
 @Component
@@ -77,51 +79,42 @@ public class RemitaIntegrationRoutes extends RouteBuilder {
                 .removeHeader(Exchange.HTTP_PATH)
                 .doTry()
                 .to("rest:get:/remita/exapp/api/v1/send/api/bgatesvc/v3/billpayment/biller/{billerId}/products?bridgeEndpoint=true")
-                .unmarshal().json(JsonLibrary.Jackson, RemitaBillerProductsResponseDto.class)
+                .unmarshal().json(JsonLibrary.Jackson, RemitaResponseDto.class)
                 .bean(RemitaService.class, "getBillerProducts")
                 .doCatch(Exception.class)
                 .to("direct:exceptionHandler")
                 .end();
 
 
-        from("direct:remita-validate-initiate-biller-transaction")
+        from("direct:remita-validate-customer-biller-transaction")
                 .process(exchange -> {
                     Map<String, Object> headers = exchange.getMessage().getHeaders();
                     Map<String, Object> productHeaders = Map.of(
                             "publicKey", remitapublicKey);
                     headers.putAll(productHeaders);
                     exchange.getIn().setHeaders(headers);
+                    ArrayList<?> body = (ArrayList<?>) exchange.getMessage().getBody(Object.class);
+                    RemitaInitiateTransactionDto remitaInitiateTransactionDto = (RemitaInitiateTransactionDto) body.get(0);
+                    exchange.getIn().setBody(remitaInitiateTransactionDto);
                 })
                 .log("${body}")
                 .removeHeader(Exchange.HTTP_PATH)
                 .doTry()
-                    .to("rest:post:/remita/exapp/api/v1/send/api/bgatesvc/v3/billpayment/biller/customer/validation?bridgeEndpoint=true")
-                    .unmarshal().json(JsonLibrary.Jackson, RemitaBillerProductsResponseDto.class)
-                    .bean(RemitaService.class, "validateCustomer")
-//                    .to("direct:remita-initiate-biller-transaction")
+                .to("rest:post:/remita/exapp/api/v1/send/api/bgatesvc/v3/billpayment/biller/customer/validation?bridgeEndpoint=true")
+                .unmarshal().json(JsonLibrary.Jackson, RemitaResponseDto.class)
+                .bean(RemitaService.class, "validateCustomer")
                 .doCatch(Exception.class)
-                     .to("direct:exceptionHandler")
+                .to("direct:exceptionHandler")
                 .end();
 
 
-
-
         from("direct:remita-initiate-biller-transaction")
-                .process(exchange -> {
-                    Map<String, Object> headers = exchange.getMessage().getHeaders();
-                    Object body = exchange.getMessage().getBody();
-                    log.info("body {}", body);
-//                    Map<String, Object> categoriesHeaders = Map.of(
-//                            HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE,
-//                            "publicKey", remitapublicKey);
-//                    headers.putAll(categoriesHeaders);
-                    exchange.getIn().setHeaders(headers);
-                })
+                .process(this::extracted)
                 .log("${body}")
                 .removeHeader(Exchange.HTTP_PATH)
                 .doTry()
                 .to("rest:post:/remita/exapp/api/v1/send/api/bgatesvc/v3/billpayment/biller/transaction/initiate?bridgeEndpoint=true")
-                .unmarshal().json(JsonLibrary.Jackson, RemitaBillerProductsResponseDto.class)
+                .unmarshal().json(JsonLibrary.Jackson, RemitaResponseDto.class)
                 .bean(RemitaService.class, "initiateTransaction")
                 .doCatch(Exception.class)
                 .to("direct:exceptionHandler");
@@ -157,6 +150,17 @@ public class RemitaIntegrationRoutes extends RouteBuilder {
                 .log(LoggingLevel.WARN, "${body}")
                 .to("log:reply");
 
+    }
+
+    private void extracted(Exchange exchange) {
+        Map<String, Object> headers = exchange.getMessage().getHeaders();
+        Map<String, Object> productHeaders = Map.of(
+                "publicKey", remitapublicKey);
+        headers.putAll(productHeaders);
+        exchange.getIn().setHeaders(headers);
+        ArrayList<?> body = (ArrayList<?>) exchange.getMessage().getBody(Object.class);
+        RemitaInitiateTransactionDto remitaInitiateTransactionDto = (RemitaInitiateTransactionDto) body.get(0);
+        exchange.getIn().setBody(remitaInitiateTransactionDto);
     }
 
     private void reworkException(Exchange exchange) {

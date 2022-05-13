@@ -5,6 +5,7 @@ import com.stsl.wallency.camelintegrationservice.configuration.AppConfiguration;
 import com.stsl.wallency.camelintegrationservice.dto.BaseResponse;
 import com.stsl.wallency.camelintegrationservice.dto.remita.BearerTokenConfiguration;
 import com.stsl.wallency.camelintegrationservice.dto.remita.RemitaInitiateTransactionDto;
+import com.stsl.wallency.camelintegrationservice.publisher.IntegrationAggregationStrategy;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.model.rest.RestBindingMode;
 import org.springframework.http.HttpHeaders;
@@ -93,14 +94,31 @@ public class IntegrationRoutes extends RouteBuilder {
 
         from("direct:remita-biller-transaction-validate-initiate")
                 .log("${body}")
-                .to("direct:remita-authenticate")
+                .enrich("direct:remita-authenticate", new IntegrationAggregationStrategy())
                 .log("${body}")
                 .process(exchange -> {
                     String token = bearerTokenConfiguration.getToken();
                     exchange.getIn().setHeader(HttpHeaders.AUTHORIZATION, "Bearer " + token);
                 })
-                .to("direct:remita-validate-initiate-biller-transaction")
-                .log("${body}");
+                .enrich("direct:remita-validate-customer-biller-transaction", new IntegrationAggregationStrategy())
+                .log("${body}")
+                .to("direct:remita-initiate-biller-transaction");
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

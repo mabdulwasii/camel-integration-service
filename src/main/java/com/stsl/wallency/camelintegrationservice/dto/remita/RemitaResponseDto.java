@@ -2,10 +2,8 @@ package com.stsl.wallency.camelintegrationservice.dto.remita;
 
 import lombok.Data;
 
-import java.util.List;
-
 @Data
-public class RemitaBillerProductsResponseDto {
+public class RemitaResponseDto {
 
     private String status;
 
