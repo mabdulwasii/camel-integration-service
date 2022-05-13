@@ -1,0 +1,19 @@
+server:
+  port: 8080
+
+
+camel:
+  springboot:
+    name: 'integration-service'
+
+app:
+  camel:
+    test: "home"
+  remita:
+    publickey: "U0hFTEx8NDA4MTcyOTh8Y2FjZjNhNDY5NzU5ZjA4OWM1ZGVhN2E2YTRkMzEyNTczMjljYTU1OTJjNzg1NWQyYjNiMTM4OGM5OTNmZGFjYWFjODkwMDFhMWFkZjYwYzJiZDQyZjZhMjkzNTFiNDgyMWI4MWJlMzhmOWU3ZjA1YzI5ZWM0NTViZGQzNGMzOGM="
+    username: "UHSU6ZIMAVXNZHXW"
+    password: "K8JE73OFE508GMOW9VWLX5SLH5QG1PF2"
+
+spring:
+  application:
+    name: integration-service
