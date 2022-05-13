@@ -57,12 +57,12 @@ public class IntegrationRoutes extends RouteBuilder {
                 .description("Get Remita Biller Products")
                 .to("direct:remita-biller-products")
 
-                .post("/remita/biller/transaction/initiate")
+                .post("/remita/biller/transaction/validate/initiate")
                 .type(RemitaInitiateTransactionDto.class)
                 .responseMessage("200", "Biller products found.")
                 .responseMessage("404", "No biller products found.")
                 .description("Get Remita Biller Products")
-                .to("direct:remita-biller-transaction-initiate")
+                .to("direct:remita-biller-transaction-validate-initiate")
 
                 .outType(BaseResponse.class);
 
@@ -91,7 +91,7 @@ public class IntegrationRoutes extends RouteBuilder {
                 .log("${body}");
 
 
-        from("direct:remita-biller-transaction-initiate")
+        from("direct:remita-biller-transaction-validate-initiate")
                 .log("${body}")
                 .to("direct:remita-authenticate")
                 .log("${body}")
@@ -99,7 +99,7 @@ public class IntegrationRoutes extends RouteBuilder {
                     String token = bearerTokenConfiguration.getToken();
                     exchange.getIn().setHeader(HttpHeaders.AUTHORIZATION, "Bearer " + token);
                 })
-                .to("direct:remita-initiate-biller-transaction")
+                .to("direct:remita-validate-initiate-biller-transaction")
                 .log("${body}");
 
 

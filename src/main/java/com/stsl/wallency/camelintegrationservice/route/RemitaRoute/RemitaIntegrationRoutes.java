@@ -86,7 +86,7 @@ public class RemitaIntegrationRoutes extends RouteBuilder {
                 .end();
 
 
-        from("direct:remita-initiate-biller-transaction")
+        from("direct:remita-validate-initiate-biller-transaction")
                 .process(exchange -> {
                     Map<String, Object> headers = exchange.getMessage().getHeaders();
                     Map<String, Object> productHeaders = Map.of(
@@ -97,9 +97,16 @@ public class RemitaIntegrationRoutes extends RouteBuilder {
                 .log("${body}")
                 .removeHeader(Exchange.HTTP_PATH)
                 .doTry()
-                .to("rest:post:/remita/exapp/api/v1/send/api/bgatesvc/v3/billpayment/biller/transaction/initiate?bridgeEndpoint=true")
+
+                .to("rest:post:/remita/exapp/api/v1/send/api/bgatesvc/v3/billpayment/biller/customer/validation?bridgeEndpoint=true")
                 .unmarshal().json(JsonLibrary.Jackson, RemitaBillerProductsResponseDto.class)
-                .bean(RemitaService.class, "getBillerProducts")
+                .bean(RemitaService.class, "validateCustomer")
+                        .doTry()
+                            .to("rest:post:/remita/exapp/api/v1/send/api/bgatesvc/v3/billpayment/biller/transaction/initiate?bridgeEndpoint=true")
+                            .unmarshal().json(JsonLibrary.Jackson, RemitaBillerProductsResponseDto.class)
+                            .bean(RemitaService.class, "initiateTransaction")
+                        .doCatch(Exception.class)
+                            .to("direct:exceptionHandler")
                 .doCatch(Exception.class)
                 .to("direct:exceptionHandler")
                 .end();
