@@ -3,14 +3,11 @@ package com.stsl.wallency.camelintegrationservice.route;
 
 import com.stsl.wallency.camelintegrationservice.configuration.AppConfiguration;
 import com.stsl.wallency.camelintegrationservice.dto.BaseResponse;
-import com.stsl.wallency.camelintegrationservice.dto.remita.BearerTokenConfiguration;
 import com.stsl.wallency.camelintegrationservice.dto.remita.RemitaBillPaymentNotificationDto;
 import com.stsl.wallency.camelintegrationservice.dto.remita.RemitaInitiateTransactionDto;
 import com.stsl.wallency.camelintegrationservice.dto.remita.RemitaValidateCustomerDto;
-import com.stsl.wallency.camelintegrationservice.publisher.IntegrationAggregationStrategy;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.model.rest.RestBindingMode;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 
@@ -18,15 +15,11 @@ import org.springframework.stereotype.Component;
 @Component
 public class IntegrationRoutes extends RouteBuilder {
 
-
     private final AppConfiguration appConfiguration;
 
-    private final BearerTokenConfiguration bearerTokenConfiguration;
 
-
-    public IntegrationRoutes(AppConfiguration appConfiguration, BearerTokenConfiguration bearerTokenConfiguration) {
+    public IntegrationRoutes(AppConfiguration appConfiguration) {
         this.appConfiguration = appConfiguration;
-        this.bearerTokenConfiguration = bearerTokenConfiguration;
     }
 
     @Override
@@ -88,109 +81,20 @@ public class IntegrationRoutes extends RouteBuilder {
                 .responseMessage("404", "No biller products found.")
                 .description("Get bill payment status")
                 .to("direct:remita-bill-payment-status")
-                .outType(BaseResponse.class);
+                .outType(BaseResponse.class)
+
+                .get("/remita/biller/categories")
+                .responseMessage("200", "Book with name was found.")
+                .responseMessage("404", "Book with name was not found.")
+                .description("Get biller categories")
+                .to("direct:remita-biller-categories")
 
 
-        from("direct:remita-billers")
-                .log("${body}")
-                .to("direct:remita-authenticate")
-                .log("${body}")
-                .process(exchange -> {
-                    String token = bearerTokenConfiguration.getToken();
-                    exchange.getIn().setHeader(HttpHeaders.AUTHORIZATION, "Bearer " + token);
-                })
-                .to("direct:remita-get-all-billers")
-                .log("${body}");
-
-
-        from("direct:remita-biller-products")
-                .log("${body}")
-                .to("direct:remita-authenticate")
-                .log("${body}")
-                .process(exchange -> {
-                    String token = bearerTokenConfiguration.getToken();
-                    exchange.getIn().setHeader(HttpHeaders.AUTHORIZATION, "Bearer " + token);
-                })
-                .to("direct:remita-get-biller-products")
-                .log("${body}");
-
-
-        from("direct:remita-biller-transaction-validate-customer")
-                .log("${body}")
-                .enrich("direct:remita-authenticate", new IntegrationAggregationStrategy())
-                .log("${body}")
-                .process(exchange -> {
-                    String token = bearerTokenConfiguration.getToken();
-                    exchange.getIn().setHeader(HttpHeaders.AUTHORIZATION, "Bearer " + token);
-                })
-                .to("direct:remita-biller-validate-customer")
-                .log("${body}");
-
-
-        from("direct:remita-biller-transaction-validate-initiate")
-                .log("${body}")
-                .enrich("direct:remita-authenticate", new IntegrationAggregationStrategy())
-                .log("${body}")
-                .process(exchange -> {
-                    String token = bearerTokenConfiguration.getToken();
-                    exchange.getIn().setHeader(HttpHeaders.AUTHORIZATION, "Bearer " + token);
-                })
-                .to("direct:remita-initiate-biller-transaction")
-                .log("${body}");
-
-        from("direct:remita-bill-payment-notification")
-                .log("${body}")
-                .enrich("direct:remita-authenticate", new IntegrationAggregationStrategy())
-                .log("${body}")
-                .process(exchange -> {
-                    String token = bearerTokenConfiguration.getToken();
-                    exchange.getIn().setHeader(HttpHeaders.AUTHORIZATION, "Bearer " + token);
-                })
-                .to("direct:remita-biller-bill-payment-notification")
-                .log("${body}");
-
-        from("direct:remita-bill-payment-status")
-                .log("${body}")
-                .enrich("direct:remita-authenticate", new IntegrationAggregationStrategy())
-                .log("${body}")
-                .process(exchange -> {
-                    String token = bearerTokenConfiguration.getToken();
-                    exchange.getIn().setHeader(HttpHeaders.AUTHORIZATION, "Bearer " + token);
-                })
-                .to("direct:remita-biller-bill-payment-status")
-                .log("${body}");
-
-
-//        rest("/api/")
-//                .consumes(MediaType.APPLICATION_JSON_VALUE)
-//                .produces(MediaType.APPLICATION_JSON_VALUE)
-//                .get("/remita/billers/products/{billerId}")
-//                .responseMessage("200", "Book with name was found.")
-//                .responseMessage("404", "Book with name was not found.")
-//                .description("Find book by name")
-//                .to("direct:get-remita-billers");
-//
-//
-//        from("direct:get-remita-billers")
-//                .log("${body}")
-//                .enrich("direct:remita-authenticate", new RemitaAuthIntegrationAggregationStrategy())
-//                .log("${body}")
-//                .process(exchange -> {
-//                    String token = bearerTokenConfiguration.getToken();
-//                    exchange.getIn().setHeader(HttpHeaders.AUTHORIZATION, "Bearer " + token);
-//                })
-//                .enrich("direct:remita-get-all-billers", new IntegrationAggregationStrategy())
-//
-//                .log("${body}")
-//                .enrich("direct:remita-get-bill-categories", new IntegrationAggregationStrategy())
-//
-//                .log("${body}")
-//                .enrich("direct:remita-get-bill-by-category", new IntegrationAggregationStrategy())
-//
-//                .log("${body}")
-//                .enrich("direct:remita-get-biller-products", new IntegrationAggregationStrategy())
-//
-//                .to("log:testlogging");
+                .get("/remita/biller/category/{categoryId}")
+                .responseMessage("200", "Book with name was found.")
+                .responseMessage("404", "Book with name was not found.")
+                .description("Get biller categories")
+                .to("direct:remita-biller-by-category");
 
 
     }
