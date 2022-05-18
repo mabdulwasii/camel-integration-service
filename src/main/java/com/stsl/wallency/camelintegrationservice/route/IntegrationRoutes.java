@@ -4,7 +4,9 @@ package com.stsl.wallency.camelintegrationservice.route;
 import com.stsl.wallency.camelintegrationservice.configuration.AppConfiguration;
 import com.stsl.wallency.camelintegrationservice.dto.BaseResponse;
 import com.stsl.wallency.camelintegrationservice.dto.remita.BearerTokenConfiguration;
+import com.stsl.wallency.camelintegrationservice.dto.remita.RemitaBillPaymentNotificationDto;
 import com.stsl.wallency.camelintegrationservice.dto.remita.RemitaInitiateTransactionDto;
+import com.stsl.wallency.camelintegrationservice.dto.remita.RemitaValidateCustomerDto;
 import com.stsl.wallency.camelintegrationservice.publisher.IntegrationAggregationStrategy;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.model.rest.RestBindingMode;
@@ -58,13 +60,34 @@ public class IntegrationRoutes extends RouteBuilder {
                 .description("Get Remita Biller Products")
                 .to("direct:remita-biller-products")
 
-                .post("/remita/biller/transaction/validate/initiate")
+                .post("/remita/biller/transaction/validate/customer")
+                .type(RemitaValidateCustomerDto.class)
+                .responseMessage("200", "Biller products found.")
+                .responseMessage("404", "No biller products found.")
+                .description("Validate Customer")
+                .to("direct:remita-biller-transaction-validate-customer")
+
+                .post("/remita/biller/transaction/initiate")
                 .type(RemitaInitiateTransactionDto.class)
                 .responseMessage("200", "Biller products found.")
                 .responseMessage("404", "No biller products found.")
-                .description("Get Remita Biller Products")
+                .description("Generate RRR and initiate transaction")
                 .to("direct:remita-biller-transaction-validate-initiate")
+                .outType(BaseResponse.class)
 
+                .post("/remita/bill/payment/notification")
+                .type(RemitaBillPaymentNotificationDto.class)
+                .responseMessage("200", "Biller products found.")
+                .responseMessage("404", "No biller products found.")
+                .description("Generate bill payment notification")
+                .to("direct:remita-bill-payment-notification")
+                .outType(BaseResponse.class)
+
+                .get("/remita/bill/payment/status/{transactionRef}")
+                .responseMessage("200", "Biller products found.")
+                .responseMessage("404", "No biller products found.")
+                .description("Get bill payment status")
+                .to("direct:remita-bill-payment-status")
                 .outType(BaseResponse.class);
 
 
@@ -92,6 +115,18 @@ public class IntegrationRoutes extends RouteBuilder {
                 .log("${body}");
 
 
+        from("direct:remita-biller-transaction-validate-customer")
+                .log("${body}")
+                .enrich("direct:remita-authenticate", new IntegrationAggregationStrategy())
+                .log("${body}")
+                .process(exchange -> {
+                    String token = bearerTokenConfiguration.getToken();
+                    exchange.getIn().setHeader(HttpHeaders.AUTHORIZATION, "Bearer " + token);
+                })
+                .to("direct:remita-biller-validate-customer")
+                .log("${body}");
+
+
         from("direct:remita-biller-transaction-validate-initiate")
                 .log("${body}")
                 .enrich("direct:remita-authenticate", new IntegrationAggregationStrategy())
@@ -100,28 +135,30 @@ public class IntegrationRoutes extends RouteBuilder {
                     String token = bearerTokenConfiguration.getToken();
                     exchange.getIn().setHeader(HttpHeaders.AUTHORIZATION, "Bearer " + token);
                 })
-                .enrich("direct:remita-validate-customer-biller-transaction", new IntegrationAggregationStrategy())
+                .to("direct:remita-initiate-biller-transaction")
+                .log("${body}");
+
+        from("direct:remita-bill-payment-notification")
                 .log("${body}")
-                .to("direct:remita-initiate-biller-transaction");
+                .enrich("direct:remita-authenticate", new IntegrationAggregationStrategy())
+                .log("${body}")
+                .process(exchange -> {
+                    String token = bearerTokenConfiguration.getToken();
+                    exchange.getIn().setHeader(HttpHeaders.AUTHORIZATION, "Bearer " + token);
+                })
+                .to("direct:remita-biller-bill-payment-notification")
+                .log("${body}");
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+        from("direct:remita-bill-payment-status")
+                .log("${body}")
+                .enrich("direct:remita-authenticate", new IntegrationAggregationStrategy())
+                .log("${body}")
+                .process(exchange -> {
+                    String token = bearerTokenConfiguration.getToken();
+                    exchange.getIn().setHeader(HttpHeaders.AUTHORIZATION, "Bearer " + token);
+                })
+                .to("direct:remita-biller-bill-payment-status")
+                .log("${body}");
 
 
 //        rest("/api/")
