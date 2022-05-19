@@ -4,13 +4,14 @@ import lombok.Data;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
+
 @Data
 @ConfigurationProperties("app")
 public class AppConfiguration {
 
     private CamelConfig camel;
 
-    private RemitaClient remitaClient;
+    private RemitaClient remita;
 
     @Value("${server.port}")
     String serverPort;
@@ -31,6 +32,12 @@ public class AppConfiguration {
         private String username;
 
         private String password;
+
+        private String liveUsername;
+
+        private String livePassword;
+
+        private boolean demoEnv;
 
     }
 

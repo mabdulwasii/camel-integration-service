@@ -1,6 +1,7 @@
 package com.stsl.wallency.camelintegrationservice.route.RemitaRoute;
 
 import com.stsl.wallency.camelintegrationservice.Services.remita.RemitaService;
+import com.stsl.wallency.camelintegrationservice.configuration.AppConfiguration;
 import com.stsl.wallency.camelintegrationservice.dto.BaseResponse;
 import com.stsl.wallency.camelintegrationservice.dto.remita.*;
 import com.stsl.wallency.camelintegrationservice.publisher.IntegrationAggregationStrategy;
@@ -9,7 +10,6 @@ import org.apache.camel.LoggingLevel;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.model.dataformat.JsonLibrary;
 import org.apache.camel.model.rest.RestBindingMode;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
@@ -19,15 +19,11 @@ import java.util.Map;
 @Component
 public class RemitaIntegrationRoutes extends RouteBuilder {
 
-    @Value("${app.remita.password}")
-    String remitaPassword;
+    private final AppConfiguration appConfiguration;
 
-    @Value("${app.remita.username}")
-    String remitaUserName;
-
-    @Value("${app.remita.publickey}")
-    String remitapublicKey;
-
+    public RemitaIntegrationRoutes(AppConfiguration appConfiguration) {
+        this.appConfiguration = appConfiguration;
+    }
 
     @Override
     public void configure() throws Exception {
@@ -36,6 +32,7 @@ public class RemitaIntegrationRoutes extends RouteBuilder {
 //        onException(RuntimeException.class)
 //                .process(this::reworkException);
 
+        String password = appConfiguration.getRemita().getPassword();
 
         restConfiguration()
                 .host("https://remitademo.net")
@@ -43,9 +40,16 @@ public class RemitaIntegrationRoutes extends RouteBuilder {
 
         from("direct:remita-authenticate")
                 .process(exchange -> {
-                    Map<?, ?> userLogin = Map.of(
-                            "username", remitaUserName,
-                            "password", remitaPassword);
+                    Map<?, ?> userLogin;
+                    if (appConfiguration.getRemita().isDemoEnv()) {
+                        userLogin = Map.of(
+                                "username", appConfiguration.getRemita().getUsername(),
+                                "password", appConfiguration.getRemita().getPassword());
+                    } else {
+                        userLogin = Map.of(
+                                "username", appConfiguration.getRemita().getLiveUsername(),
+                                "password", appConfiguration.getRemita().getLivePassword());
+                    }
                     exchange.getIn().setBody(userLogin);
                 })
                 .log("${body}")
@@ -92,7 +96,7 @@ public class RemitaIntegrationRoutes extends RouteBuilder {
                 .process(exchange -> {
                     Map<String, Object> headers = exchange.getMessage().getHeaders();
                     Map<String, Object> productHeaders = Map.of(
-                            "publicKey", remitapublicKey);
+                            "publicKey", appConfiguration.getRemita().getPublicKey());
                     headers.putAll(productHeaders);
                     exchange.getIn().setHeaders(headers);
                     ArrayList<?> body = (ArrayList<?>) exchange.getMessage().getBody(Object.class);
@@ -203,7 +207,7 @@ public class RemitaIntegrationRoutes extends RouteBuilder {
     private void setExchangeHeader(Exchange exchange) {
         Map<String, Object> headers = exchange.getMessage().getHeaders();
         Map<String, Object> productHeaders = Map.of(
-                "publicKey", remitapublicKey);
+                "publicKey", appConfiguration.getRemita().getPublicKey());
         headers.putAll(productHeaders);
         exchange.getIn().setHeaders(headers);
     }
