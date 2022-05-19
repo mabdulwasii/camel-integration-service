@@ -32,7 +32,7 @@ public class IntegrationRoutes extends RouteBuilder {
                 .contextPath(appConfiguration.getContextPath())
                 .apiContextPath("/api-doc")
                 .host("localhost")
-                .apiProperty("api.title", "Spring Boot Camel Postgres Rest API.")
+                .apiProperty("api.title", "Spring Boot Camel Integration  Service.")
                 .apiProperty("api.version", "1.0")
                 .enableCORS(true)
                 .bindingMode(RestBindingMode.json);
