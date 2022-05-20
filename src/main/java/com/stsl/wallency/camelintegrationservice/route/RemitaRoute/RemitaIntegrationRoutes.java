@@ -32,11 +32,17 @@ public class RemitaIntegrationRoutes extends RouteBuilder {
 //        onException(RuntimeException.class)
 //                .process(this::reworkException);
 
-        String password = appConfiguration.getRemita().getPassword();
 
-        restConfiguration()
-                .host("https://remitademo.net")
-                .bindingMode(RestBindingMode.json);
+        if (appConfiguration.getRemita().isDemoEnv()) {
+            restConfiguration()
+                    .host(appConfiguration.getRemita().getUrl())
+                    .bindingMode(RestBindingMode.json);
+        } else {
+            restConfiguration()
+                    .host(appConfiguration.getRemita().getLiveUrl())
+                    .bindingMode(RestBindingMode.json);
+        }
+
 
         from("direct:remita-authenticate")
                 .process(exchange -> {
@@ -93,16 +99,7 @@ public class RemitaIntegrationRoutes extends RouteBuilder {
         from("direct:remita-biller-transaction-validate-customer")
                 .log("${body}")
                 .enrich("direct:remita-authenticate", new IntegrationAggregationStrategy())
-                .process(exchange -> {
-                    Map<String, Object> headers = exchange.getMessage().getHeaders();
-                    Map<String, Object> productHeaders = Map.of(
-                            "publicKey", appConfiguration.getRemita().getPublicKey());
-                    headers.putAll(productHeaders);
-                    exchange.getIn().setHeaders(headers);
-                    ArrayList<?> body = (ArrayList<?>) exchange.getMessage().getBody(Object.class);
-                    RemitaValidateCustomerDto remitaValidateCustomerDto = (RemitaValidateCustomerDto) body.get(0);
-                    exchange.getIn().setBody(remitaValidateCustomerDto);
-                })
+                .process(this::process2)
                 .log("${body}")
                 .removeHeader(Exchange.HTTP_PATH)
                 .doTry()
@@ -206,8 +203,14 @@ public class RemitaIntegrationRoutes extends RouteBuilder {
 
     private void setExchangeHeader(Exchange exchange) {
         Map<String, Object> headers = exchange.getMessage().getHeaders();
-        Map<String, Object> productHeaders = Map.of(
-                "publicKey", appConfiguration.getRemita().getPublicKey());
+        Map<String, Object> productHeaders;
+        if (appConfiguration.getRemita().isDemoEnv()) {
+            productHeaders = Map.of(
+                    "publicKey", appConfiguration.getRemita().getPublicKey());
+        } else {
+            productHeaders = Map.of(
+                    "publicKey", appConfiguration.getRemita().getLivePublicKey());
+        }
         headers.putAll(productHeaders);
         exchange.getIn().setHeaders(headers);
     }
@@ -230,5 +233,12 @@ public class RemitaIntegrationRoutes extends RouteBuilder {
         ArrayList<?> body = (ArrayList<?>) exchange.getMessage().getBody(Object.class);
         RemitaBillPaymentNotificationDto remitaBillPaymentNotificationDto = (RemitaBillPaymentNotificationDto) body.get(0);
         exchange.getIn().setBody(remitaBillPaymentNotificationDto);
+    }
+
+    private void process2(Exchange exchange) {
+        setExchangeHeader(exchange);
+        ArrayList<?> body = (ArrayList<?>) exchange.getMessage().getBody(Object.class);
+        RemitaValidateCustomerDto remitaValidateCustomerDto = (RemitaValidateCustomerDto) body.get(0);
+        exchange.getIn().setBody(remitaValidateCustomerDto);
     }
 }

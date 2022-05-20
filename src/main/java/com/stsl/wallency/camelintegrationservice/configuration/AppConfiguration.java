@@ -33,9 +33,15 @@ public class AppConfiguration {
 
         private String password;
 
+        private String url;
+
         private String liveUsername;
 
         private String livePassword;
+
+        private String livePublicKey;
+
+        private String liveUrl;
 
         private boolean demoEnv;
 
