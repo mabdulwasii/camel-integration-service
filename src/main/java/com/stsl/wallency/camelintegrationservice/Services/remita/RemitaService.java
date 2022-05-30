@@ -16,7 +16,6 @@ import java.util.Map;
 @Service
 @Slf4j
 public class RemitaService {
-
     public void saveAuthToken(Exchange exchange) {
         RemitaAuthDto remitaAuthDto = exchange.getIn().getBody(RemitaAuthDto.class);
         if (remitaAuthDto.getStatus().equals("00")) {
